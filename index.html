@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SupervisaFarma — Carros de Paro v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --azul:#1B3A5C;--azul-med:#2C5F8A;--azul-claro:#EAF2FB;
+  --verde:#1A7A4A;--verde-claro:#E8F5EE;
+  --rojo:#C0392B;--rojo-claro:#FDECEA;
+  --amarillo:#D4820A;--amarillo-claro:#FEF6E4;
+  --naranja:#E05C00;--naranja-claro:#FEF0E6;
+  --gris:#F2F4F7;--gris-borde:#D1D9E0;
+  --texto:#1A2533;--texto-suave:#5A6A7A;
+  --sombra:0 2px 12px rgba(27,58,92,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#EEF2F7;color:var(--texto);min-height:100vh}
+.app-header{background:var(--azul);color:#fff;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(27,58,92,.3)}
+.logo{display:flex;align-items:center;gap:.65rem}
+.logo-txt h1{font-size:.95rem;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.logo-txt span{display:block;font-size:.65rem;font-weight:400;opacity:.6;letter-spacing:.06em;text-transform:uppercase;margin-top:1px}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{background:transparent;border:none;color:rgba(255,255,255,.6);padding:.4rem .85rem;border-radius:6px;cursor:pointer;font-size:.78rem;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:.4rem;white-space:nowrap}
+.nav-tab:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-tab.active{background:rgba(255,255,255,.18);color:#fff}
+.page{display:none;padding:1.5rem;max-width:1180px;margin:0 auto}
+.page.active{display:block}
+.card{background:#fff;border-radius:12px;box-shadow:var(--sombra);border:1px solid var(--gris-borde);overflow:hidden;margin-bottom:1.25rem}
+.card-header{padding:1rem 1.25rem;border-bottom:1px solid var(--gris-borde);display:flex;align-items:center;justify-content:space-between;background:var(--gris);gap:.75rem;flex-wrap:wrap}
+.card-header h2{font-size:.9rem;font-weight:600;color:var(--azul);display:flex;align-items:center;gap:.45rem}
+.card-body{padding:1.25rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.form-group{display:flex;flex-direction:column;gap:.3rem}
+.form-group.full{grid-column:1/-1}
+label{font-size:.72rem;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{border:1.5px solid var(--gris-borde);border-radius:7px;padding:.55rem .8rem;font-size:.88rem;font-family:'Inter',sans-serif;color:var(--texto);background:#fff;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul-med);box-shadow:0 0 0 3px rgba(44,95,138,.10)}
+textarea{resize:vertical;min-height:72px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:7px;font-size:.82rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--azul);color:#fff}.btn-primary:hover{background:var(--azul-med)}
+.btn-success{background:var(--verde);color:#fff}.btn-success:hover{background:#156038}
+.btn-danger{background:var(--rojo);color:#fff}.btn-danger:hover{background:#a93226}
+.btn-outline{background:transparent;border:1.5px solid var(--gris-borde);color:var(--texto)}.btn-outline:hover{border-color:var(--azul-med);color:var(--azul-med)}
+.btn-ghost{background:transparent;border:none;color:var(--texto-suave);padding:.3rem .5rem;cursor:pointer}.btn-ghost:hover{color:var(--rojo)}
+.btn-sm{padding:.35rem .7rem;font-size:.74rem}
+.btn-xs{padding:.22rem .5rem;font-size:.68rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.steps-nav{display:flex;margin-bottom:1.25rem;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--gris-borde)}
+.step-it{flex:1;padding:.7rem .4rem;text-align:center;font-size:.74rem;font-weight:600;color:var(--texto-suave);border-right:1px solid var(--gris-borde);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.3rem}
+.step-it:last-child{border-right:none}
+.step-it.active{background:var(--azul);color:#fff}
+.step-it.done{background:var(--verde-claro);color:var(--verde)}
+.step-n{width:17px;height:17px;border-radius:50%;background:currentColor;color:#fff;font-size:.62rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-it.active .step-n{background:rgba(255,255,255,.28)}
+.step-it.done .step-n{background:var(--verde);color:#fff}
+.servicios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.55rem;margin-bottom:.85rem}
+.srv-btn{padding:.65rem .4rem;border-radius:8px;border:2px solid var(--gris-borde);background:#fff;cursor:pointer;font-size:.8rem;font-weight:600;font-family:'Inter',sans-serif;color:var(--texto-suave);text-align:center;transition:all .15s;line-height:1.3}
+.srv-btn:hover{border-color:var(--azul-med);color:var(--azul-med);background:var(--azul-claro)}
+.srv-btn.sel{border-color:var(--azul);background:var(--azul);color:#fff}
+.srv-badge{display:block;font-size:.63rem;font-weight:400;opacity:.72;font-family:'IBM Plex Mono',monospace;margin-top:2px}
+/* TABLA */
+.med-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.med-table thead th{background:var(--azul);color:#fff;padding:.55rem .75rem;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.med-table thead th.center{text-align:center}
+.med-table tbody tr{border-bottom:1px solid var(--gris)}
+.med-table tbody tr:hover{background:var(--azul-claro)}
+.med-table tbody tr.vencido{background:#fff5f5}
+.med-table tbody tr.proximo{background:#fff9f0}
+.med-table td{padding:.5rem .75rem;vertical-align:middle}
+.med-table td.center{text-align:center}
+.med-table td input[type=number]{width:65px;text-align:center;font-family:'IBM Plex Mono',monospace;padding:.28rem .3rem;border:1.5px solid var(--gris-borde);border-radius:5px}
+.med-table td input[type=date]{width:138px;font-size:.78rem;padding:.28rem .4rem;border:1.5px solid var(--gris-borde);border-radius:5px;font-family:'Inter',sans-serif;cursor:pointer}
+.med-table td input[type=date].vencido{border-color:var(--rojo);background:#fff5f5}
+.med-table td input[type=date].proximo{border-color:var(--naranja);background:#fff9f0}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.b-ok{background:var(--verde-claro);color:var(--verde)}
+.b-low{background:var(--rojo-claro);color:var(--rojo)}
+.b-warn{background:var(--amarillo-claro);color:var(--amarillo)}
+.b-na{background:#f0f0f0;color:#888}
+.b-venc{background:var(--rojo-claro);color:var(--rojo)}
+.b-prox{background:var(--naranja-claro);color:var(--naranja)}
+.b-vigente{background:var(--verde-claro);color:var(--verde)}
+.b-sin{background:#f0f0f0;color:#aaa}
+/* PAUTA */
+.criterio-row{display:flex;align-items:flex-start;gap:.85rem;padding:.75rem 0;border-bottom:1px solid var(--gris)}
+.criterio-row:last-child{border-bottom:none}
+.crit-num{flex-shrink:0;width:24px;height:24px;background:var(--azul);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:700;margin-top:1px}
+.crit-txt{flex:1;font-size:.84rem;line-height:1.5}
+.crit-txt.bold{font-weight:600}
+.radio-grp{display:flex;gap:.3rem;flex-shrink:0}
+.r-btn{padding:.25rem .6rem;border-radius:6px;border:1.5px solid var(--gris-borde);font-size:.72rem;font-weight:600;cursor:pointer;background:transparent;font-family:'Inter',sans-serif;transition:all .1s}
+.r-btn:hover{border-color:var(--azul-med)}
+.r-si{background:var(--verde-claro);border-color:var(--verde);color:var(--verde)}
+.r-no{background:var(--rojo-claro);border-color:var(--rojo);color:var(--rojo)}
+.r-na{background:var(--amarillo-claro);border-color:var(--amarillo);color:var(--amarillo)}
+.pct-box{display:flex;align-items:center;gap:1.25rem;padding:.85rem 1.25rem;background:var(--azul-claro);border-radius:9px;margin-top:.85rem}
+.pct-n{font-family:'IBM Plex Mono',monospace;font-size:2.4rem;font-weight:700;color:var(--azul);line-height:1}
+.pct-lbl{font-size:.75rem;color:var(--texto-suave);font-weight:500}
+.pct-bar-w{flex:1;height:9px;background:var(--gris-borde);border-radius:5px;overflow:hidden}
+.pct-bar{height:100%;border-radius:5px;transition:width .4s;background:var(--azul-med)}
+.pct-det{font-size:.78rem;color:var(--texto-suave)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;margin-bottom:1.1rem}
+.stat-box{background:#fff;border:1px solid var(--gris-borde);border-radius:10px;padding:1rem;text-align:center}
+.stat-n{font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:700}
+.stat-l{font-size:.73rem;color:var(--texto-suave);margin-top:.15rem}
+.mini-stats{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.85rem}
+.mini-s{flex:1;min-width:95px;border-radius:8px;padding:.6rem;text-align:center}
+.mini-n{font-family:'IBM Plex Mono',monospace;font-size:1.35rem;font-weight:700}
+.mini-l{font-size:.68rem;margin-top:2px}
+.hist-item{background:#fff;border:1px solid var(--gris-borde);border-radius:9px;padding:.85rem 1.1rem;display:flex;align-items:center;gap:.85rem;cursor:pointer;transition:all .15s;margin-bottom:.55rem}
+.hist-item:hover{border-color:var(--azul-med);box-shadow:var(--sombra)}
+.hist-fecha{font-family:'IBM Plex Mono',monospace;font-size:.73rem;color:var(--texto-suave);min-width:82px}
+.hist-srv{font-weight:600;font-size:.86rem;flex:1}
+.alert{padding:.72rem .95rem;border-radius:8px;font-size:.81rem;margin-bottom:.75rem;display:flex;align-items:flex-start;gap:.5rem;line-height:1.45}
+.alert-info{background:var(--azul-claro);border-left:3px solid var(--azul-med);color:var(--azul)}
+.alert-warn{background:var(--amarillo-claro);border-left:3px solid var(--amarillo);color:#7A4D08}
+.alert-ok{background:var(--verde-claro);border-left:3px solid var(--verde);color:#0D4D2A}
+.alert-danger{background:var(--rojo-claro);border-left:3px solid var(--rojo);color:#6B1A14}
+/* ADMIN */
+.admin-section{margin-bottom:1.5rem}
+.admin-section h3{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--texto-suave);margin-bottom:.75rem}
+.admin-list{display:flex;flex-direction:column;gap:.4rem;max-height:320px;overflow-y:auto}
+.admin-item{display:flex;align-items:center;gap:.65rem;padding:.5rem .85rem;background:var(--gris);border-radius:7px;border:1px solid var(--gris-borde)}
+.admin-item-name{flex:1;font-size:.82rem;font-weight:500}
+.admin-item-detail{font-size:.73rem;color:var(--texto-suave);font-family:'IBM Plex Mono',monospace}
+.add-row{display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;padding:.85rem;background:var(--gris);border-radius:8px;border:1px dashed var(--gris-borde);margin-top:.75rem}
+.add-row .form-group{flex:1;min-width:120px}
+.tbl-filters{display:flex;gap:.6rem;margin-bottom:.75rem;align-items:center;flex-wrap:wrap}
+.tbl-filters input{max-width:230px;flex:1}
+.filter-pill{padding:.3rem .65rem;border-radius:6px;border:1.5px solid var(--gris-borde);background:#fff;cursor:pointer;font-size:.72rem;font-weight:600;font-family:'Inter',sans-serif;transition:all .1s}
+.filter-pill.on{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#fff;border-radius:14px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{padding:1.1rem 1.25rem;border-bottom:1px solid var(--gris-borde);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:.95rem;font-weight:600;color:var(--azul)}
+.modal-body{padding:1.25rem}
+.modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--gris-borde);display:flex;justify-content:flex-end;gap:.6rem}
+.tag{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tag-admin{background:#e8e0f8;color:#5B21B6}
+.divider{height:1px;background:var(--gris-borde);margin:1rem 0}
+.flex-end{display:flex;justify-content:flex-end;gap:.6rem}
+.flex-bw{display:flex;justify-content:space-between;align-items:center;gap:.85rem;flex-wrap:wrap}
+.mt1{margin-top:1rem}.mt15{margin-top:1.5rem}
+@media(max-width:700px){
+  .page{padding:1rem}
+  .form-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .steps-nav{flex-direction:column}
+  .step-it{border-right:none;border-bottom:1px solid var(--gris-borde)}
+  .servicios-grid{grid-template-columns:repeat(3,1fr)}
+  .nav-tab .nav-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="rgba(255,255,255,0.15)"/>
+      <path d="M8 10h16v2H8zm0 5h16v2H8zm0 5h10v2H8z" fill="white"/>
+      <circle cx="25" cy="22" r="5" fill="#2ecc71"/>
+      <path d="M23 22l1.5 1.5L27 20" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="logo-txt">
+      <h1>SupervisaFarma</h1>
+      <span>Carros de Paro · v2.0</span>
+    </div>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('nueva',this)"><span>➕</span><span class="nav-label">Nueva Evaluación</span></button>
+    <button class="nav-tab" onclick="showPage('historial',this)"><span>📋</span><span class="nav-label">Historial</span></button>
+    <button class="nav-tab" onclick="showPage('admin',this)"><span>⚙️</span><span class="nav-label">Administración</span></button>
+  </nav>
+</header>
+
+<main id="page-nueva" class="page active">
+  <div class="steps-nav">
+    <div class="step-it active" id="st1" onclick="goStep(1)"><span class="step-n">1</span> Servicio</div>
+    <div class="step-it" id="st2" onclick="goStep(2)"><span class="step-n">2</span> Medicamentos</div>
+    <div class="step-it" id="st3" onclick="goStep(3)"><span class="step-n">3</span> Pauta Carro</div>
+    <div class="step-it" id="st4" onclick="goStep(4)"><span class="step-n">4</span> Pauta Unidosis</div>
+    <div class="step-it" id="st5" onclick="goStep(5)"><span class="step-n">5</span> Resumen</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="step-1">
+    <div class="card">
+      <div class="card-header"><h2>🏥 Seleccionar Servicio Clínico</h2></div>
+      <div class="card-body">
+        <div class="alert alert-info"><span>ℹ️</span><span>Selecciona el servicio. El stock autorizado se carga automáticamente desde el consolidado. Puedes editar datos desde <strong>Administración</strong>.</span></div>
+        <div class="servicios-grid" id="servicios-grid"></div>
+        <div class="divider"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Fecha de Evaluación</label><input type="date" id="fechaEval"/></div>
+          <div class="form-group"><label>Evaluador Q.F. — Nombre completo</label><input type="text" id="evaluadorNombre" placeholder="Nombre y apellidos..."/></div>
+          <div class="form-group"><label>Identificación Carro de Paro</label><input type="text" id="carroParo" placeholder="Ej: CP-01, Carro Norte..."/></div>
+          <div class="form-group"><label>N° Resolución / Referencia Stock</label><input type="text" id="stockRef" placeholder="Ej: Res. N°123/2025"/></div>
+        </div>
+        <div class="flex-end mt15">
+          <button class="btn btn-primary" onclick="goStep(2)">Siguiente → Conteo de Medicamentos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step-2" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <h2 id="titulo-conteo">💊 Conteo de Medicamentos</h2>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="marcarCompletos()">✓ Todos completos</button>
+          <button class="btn btn-sm btn-outline" onclick="limpiarConteos()">↺ Limpiar</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <span>📅</span>
+          <span>Ingresa la <strong>cantidad encontrada</strong> y la <strong>fecha de vencimiento</strong> de cada medicamento. Los vencidos aparecen en rojo, los próximos a vencer (≤60 días) en naranja.</span>
+        </div>
+        <div class="tbl-filters">
+          <input type="text" id="filtro-med" placeholder="🔍 Buscar medicamento..." oninput="renderTabla()"/>
+          <button class="filter-pill" id="btn-solo-stock" onclick="toggleFiltro('stock')">Solo stock &gt; 0</button>
+          <button class="filter-pill" id="btn-solo-vto" onclick="toggleFiltro('vto')">⚠ Con alerta VTO</button>
+          <span id="cnt-meds" style="font-size:.73rem;color:var(--texto-suave);font-family:'IBM Plex Mono',monospace;margin-left:auto"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="med-table" id="tabla-meds">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Medicamento</th>
+                <th>Presentación</th>
+                <th class="center">Stock<br>Autorizado</th>
+                <th class="center">Encontrado</th>
+                <th class="center">Diferencia</th>
+                <th>📅 Fecha Vencimiento</th>
+                <th>Estado VTO</th>
+                <th>Estado Stock</th>
+              </tr>
+            </thead>
+            <tbody id="meds-tbody"></tbody>
+          </table>
+        </div>
+        <div id="resumen-conteo"></div>
+        <div class="flex-bw mt15">
+          <button class="btn btn-outline" onclick="goStep(1)">← Volver</button>
+          <button class="btn btn-primary" onclick="goStep(3)">Siguiente → Pauta Carro de Paro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="step-3" style="display:none">
+    <div class="card">
+      <div class="card-header"><h2>🚨 Pauta 1 — Supervisión Carro de Paro / Stock Autorizado</h2></div>
+      <div class="card-body">
+        <div id="criterios-p1"></div>
+        <div class="pct-box">
+          <div><div class="pct-n" id="pct1-val">—</div><div class="pct-lbl">% Cumplimiento Pauta 1</div></div>
+          <div style="flex:1"><div class="pct-bar-w"><div class="pct-bar" id="pct1-bar" style="width:0%"></div></div></div>
+          <div class="pct-det" id="pct1-det"></div>
+        </div>
+        <div class="flex-bw mt15">
+          <button class="btn btn-outline" onclick="goStep(2)">← Volver</button>
+          <button class="btn btn-primary" onclick="goStep(4)">Siguiente → Pauta Unidosis</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div id="step-4" style="display:none">
+    <div class="card">
+      <div class="card-header"><h2>🏥 Pauta 2 — Almacenamiento Fármacos Pacientes (Unidosis)</h2></div>
+      <div class="card-body">
+        <div id="criterios-p2"></div>
+        <div class="pct-box">
+          <div><div class="pct-n" id="pct2-val">—</div><div class="pct-lbl">% Cumplimiento Pauta 2</div></div>
+          <div style="flex:1"><div class="pct-bar-w"><div class="pct-bar" id="pct2-bar" style="width:0%"></div></div></div>
+          <div class="pct-det" id="pct2-det"></div>
+        </div>
+        <div class="form-group mt15"><label>Observaciones Generales</label><textarea id="observaciones" placeholder="Anote observaciones relevantes de la evaluación..."></textarea></div>
+        <div class="flex-bw mt15">
+          <button class="btn btn-outline" onclick="goStep(3)">← Volver</button>
+          <button class="btn btn-primary" onclick="goStep(5)">Ver Resumen e Informe →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div id="step-5" style="display:none">
+    <div id="resumen-wrap"></div>
+  </div>
+</main>
+
+<main id="page-historial" class="page">
+  <div class="card">
+    <div class="card-header">
+      <h2>📁 Historial de Evaluaciones</h2>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn btn-sm btn-outline" onclick="exportarHistorial()">⬇ Exportar</button>
+        <button class="btn btn-sm btn-danger" onclick="limpiarHistorial()">Limpiar</button>
+      </div>
+    </div>
+    <div class="card-body" id="hist-wrap"></div>
+  </div>
+</main>
+
+<main id="page-admin" class="page">
+  <div class="card">
+    <div class="card-header">
+      <h2>⚙️ Administración <span class="tag tag-admin">Admin</span></h2>
+    </div>
+    <div class="card-body">
+      <div class="admin-section">
+        <h3>🏥 Servicios Clínicos</h3>
+        <div class="admin-list" id="admin-servicios-list"></div>
+        <div class="add-row">
+          <div class="form-group"><label>Nombre del Nuevo Servicio</label><input type="text" id="new-srv-nombre" placeholder="Ej: UCI Pediátrica..."/></div>
+          <button class="btn btn-primary" onclick="addServicio()">+ Agregar Servicio</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="admin-section">
+        <h3>💊 Editar Stock Autorizado por Servicio</h3>
+        <div class="form-grid" style="margin-bottom:.85rem">
+          <div class="form-group"><label>Seleccionar Servicio</label><select id="admin-srv-sel" onchange="loadAdminStock()"></select></div>
+        </div>
+        <div id="admin-stock-wrap"><div class="alert alert-info"><span>ℹ️</span><span>Selecciona un servicio para ver y editar su stock autorizado.</span></div></div>
+        <div class="add-row" id="add-med-row" style="display:none">
+          <div class="form-group"><label>Principio Activo</label><input type="text" id="new-med-nombre" placeholder="Nombre del medicamento..."/></div>
+          <div class="form-group" style="max-width:150px"><label>Presentación</label><input type="text" id="new-med-pres" placeholder="Ej: Ampolla"/></div>
+          <div class="form-group" style="max-width:100px"><label>Stock Auth.</label><input type="number" id="new-med-stock" min="0" value="0"/></div>
+          <button class="btn btn-primary" onclick="addMedicamento()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="admin-section">
+        <h3>💾 Respaldo y Restauración</h3>
+        <div class="alert alert-warn"><span>⚠️</span><span>Exporta la configuración para respaldarla o llevarla a otro equipo. La importación reemplaza todos los datos actuales.</span></div>
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="exportarConfig()">⬇ Exportar configuración</button>
+          <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">⬆ Importar configuración</button>
+          <button class="btn btn-danger btn-sm" onclick="resetearDatos()" style="margin-left:auto">↺ Restaurar datos originales</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarConfig(event)"/>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL EDITAR MEDICAMENTO -->
+<div class="modal-overlay hidden" id="modal-edit-med">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Editar Medicamento</h3>
+      <button class="btn-ghost" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-med-srv"/>
+      <input type="hidden" id="edit-med-idx"/>
+      <div class="form-grid">
+        <div class="form-group full"><label>Nombre / Principio Activo</label><input type="text" id="edit-med-nombre"/></div>
+        <div class="form-group"><label>Presentación</label><input type="text" id="edit-med-pres"/></div>
+        <div class="form-group"><label>Stock Autorizado</label><input type="number" id="edit-med-stock" min="0"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditMed()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STOCK_BASE = {"URGENCIA": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 7}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 8}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 3}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 3}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "SM": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 7}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}], "UPC": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 6}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 8}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 5}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 1}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}], "DIALISIS": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 1}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 3}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}], "PABELLON": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 5}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 1}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 8}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 3}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "RECUPERACIÓN": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 5}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 3}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 5}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 1}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 8}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 3}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "MQ A": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 3}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "MQ B": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 3}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "MQ PED": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 3}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 4}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 4}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 3}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 4}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}], "IMAGENOLOGÍA": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}], "PARTO": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 4}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 5}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 3}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 5}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 1}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}], "NEONATAL": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 0}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 0}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}], "POLICLINICO": [{"nombre": "ACIDO TRANEXAMICO 1.000 MG/10 ML AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "ADENOSINA AMP 6 MG/2 ML-", "presentacion": "Ampolla", "stock": 10}, {"nombre": "AGUA BIDESTILADA 10ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMINOFILINA 250 MG/ 10 ML", "presentacion": "Ampolla", "stock": 0}, {"nombre": "AMIODARONA 150 MG/3 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "ATROPINA SULFATO 1 MG/ML AMPOLLA", "presentacion": "Ampolla", "stock": 6}, {"nombre": "BETAMETASONA FOSFATO DISODICO 4 MG/1ML AM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "BICARBONATO 2/3 MOLAR 250 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CALCIO CLORURO 10 % AM 10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "CAPTOPRIL 25 MG COMPRIMIDO", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORFENAMINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "CLORURO DE POTASIO 10 % AM 10 ML SOLUCION INYECTABLE.", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DEXAMETASONA 4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DIAZEPAM 10 MG/2 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "DOBUTAMINA 250 MG/5 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "DOPAMINA AMP 200 MG/5 ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "EFEDRINA 6% (60 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "EPINEFRINA 0,1% (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 10}, {"nombre": "ERGOMETRINA AMP 200 MCG/ML (REFRIGERADO)", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ETOMIDATO  FA 20 MG/10 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENOBARBITAL 200 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "FENTANILO 0,1 MG/2 ML SOL.IM/IV AM", "presentacion": "Ampolla", "stock": 2}, {"nombre": "FENTANILO AMP 500 MCG/10 ML", "presentacion": "Ampolla", "stock": 1}, {"nombre": "FLUMAZENIL 500 MCG/5 ML (100 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "FUROSEMIDA 20 MG/2 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "GLUCONATO DE CALCIO 10% (100 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "GLUCOSA AL 30% 20ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "HIDROCORTISONA 500 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "HIDROCORTISONA SUCCINATO SODICO 100 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 5}, {"nombre": "KETAMINA 500 MG/10 ML (50 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "LABETALOL 5 MG/ ML AM 20 ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LANATOSIDO C 400 MCG/2 ML (200 MCG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 6}, {"nombre": "LIDOCAINA CLORHIDRATO 2 % AM 5ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "LORAZEPAM AMP 4 MG/2 ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM  AMP 5 MG/ML", "presentacion": "Ampolla", "stock": 3}, {"nombre": "MIDAZOLAM 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 1}, {"nombre": "MISOPROSTOL 200 MCG COMPRIMIDO", "presentacion": "Comprimido", "stock": 0}, {"nombre": "MORFINA 10 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "NALOXONA 0,4 MG/ML INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "NITROGLICERINA 50 MG/10 ML (5 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "NOREPINEFRINA 4 MG/4 ML (1 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPANOLOL AM 1MG/1ML", "presentacion": "Ampolla", "stock": 4}, {"nombre": "PROPOFOL 1% 20ML", "presentacion": "Ampolla", "stock": 2}, {"nombre": "PROTAMINA SULFATO 50 MG/5 ML (10 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 0}, {"nombre": "RANITIDINA 50MG/2ML SOL INY IV-IM AM/FAM", "presentacion": "Ampolla", "stock": 0}, {"nombre": "ROCURONIO BROMURO AM 50 MG/5 ML", "presentacion": "Frasco ampolla", "stock": 2}, {"nombre": "SODIO BICARBONATO 8,4 % AM 10 ML", "presentacion": "Ampolla", "stock": 6}, {"nombre": "SODIO CLORURO 0.9 % AMP 20 ML", "presentacion": "Ampolla", "stock": 10}, {"nombre": "SUCCINILCOLINA 100 MG/5 ML (20 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 2}, {"nombre": "SUGAMMADEX 200 MG/2 ML (100 MG/ML) INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "SULFATO DE MAGNESIO AMP 25%", "presentacion": "Ampolla", "stock": 8}, {"nombre": "SUSTITUTO DEL PLASMA 6% 500 ML", "presentacion": "Matraz", "stock": 2}, {"nombre": "TERLIPRESINA 1 MG INYECTABLE", "presentacion": "Frasco ampolla", "stock": 0}, {"nombre": "VERAPAMILO 5 MG/2 ML (2,5 MG/ML) INYECTABLE", "presentacion": "Ampolla", "stock": 3}]};
+
+const C1_BASE = [
+  "Los medicamentos cuentan con una ubicación definida separada de otros depósitos de medicamentos almacenados en el servicio.",
+  "Existe stock definido para el carro de paro/stock autorizado por resolución.",
+  "Depósito cumple condiciones adecuadas de higiene, temperatura, luz, humedad, ventilación, aislamiento y resguardo.",
+  "Los medicamentos termolábiles se encuentran almacenados entre +2° y +8°C al momento de la revisión.",
+  "El refrigerador cuenta con registro de temperatura al día y dentro del rango +2° y +8°C.",
+  "El refrigerador es exclusivo para almacenamiento de medicamentos.",
+  "Los cajetines donde se almacena los medicamentos cuentan con identificación que incluya al menos nombre principio activo, dosificación y forma farmacéutica.",
+  "No existe en el depósito, medicamentos vencidos, deteriorados, no aptos para su uso.",
+  "El stock autorizado cuenta con un registro de revisión (mensual para stock autorizado y semanales para carro de paro).",
+  {t:"Existe un lugar exclusivo para el almacenamiento de estupefacientes y psicotrópicos que permita conservarlos permanentemente bajo llave y con las demás medidas necesarias para prevenir su hurto, robo, sustracción o extravío.", bold:true}
+];
+const C2_BASE = [
+  "Los medicamentos psicotrópicos y estupefacientes se encuentran al resguardo en un lugar seguro custodiados por un profesional y etiquetados con el nombre del paciente.",
+  "Los medicamentos termolábiles están almacenados entre +2° y +8°C, etiquetados con el nombre del paciente.",
+  "Los medicamentos de pacientes se encuentran almacenados en su respectivo cajetín.",
+  "Los cajetines del carro de unidosis se encuentran limpios e identificados con nombre de paciente y/o número de cama.",
+  "El carro de unidosis se encuentra cerrado.",
+  "Los medicamentos en dosis múltiples se encuentran etiquetados con nombre del paciente y fecha de apertura.",
+  "Los medicamentos fotosensibles se encuentran protegidos de la luz durante el almacenamiento y/o administración.",
+  "Los medicamentos en diluciones de gran volumen se encuentran etiquetados con el nombre del paciente, nombre del medicamento, dosis, volumen total, fecha y responsable de la preparación."
+];
+
+function getData(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
+function setData(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function getStock(){return getData('sf_stock',STOCK_BASE);}
+function getCrits1(){return getData('sf_c1',C1_BASE);}
+function getCrits2(){return getData('sf_c2',C2_BASE);}
+function getHistorial(){return getData('sf_hist',[]);}
+
+let servicioActual=null, medicamentos=[], respuestas1={}, respuestas2={};
+let filtroStock=false, filtroVto=false;
+
+function showPage(p,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(p==='historial') renderHistorial();
+  if(p==='admin') initAdmin();
+}
+
+function goStep(n){
+  if(n>=2&&!servicioActual){alert('Selecciona un servicio clínico primero.');return;}
+  for(let i=1;i<=5;i++){
+    const el=document.getElementById('step-'+i);
+    if(el) el.style.display=i===n?'block':'none';
+    const tab=document.getElementById('st'+i);
+    if(tab){tab.classList.remove('active','done');if(i===n)tab.classList.add('active');else if(i<n)tab.classList.add('done');}
+  }
+  if(n===2) renderTabla();
+  if(n===5) renderResumen();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function initServicios(){
+  const stock=getStock();
+  document.getElementById('servicios-grid').innerHTML=Object.keys(stock).map(s=>{
+    const cnt=stock[s].filter(m=>m.stock>0).length;
+    return `<button class="srv-btn" id="sb-${s}" onclick="selServicio('${s}')">${s}<span class="srv-badge">${cnt} fármacos</span></button>`;
+  }).join('');
+}
+
+function selServicio(s){
+  servicioActual=s;
+  document.querySelectorAll('.srv-btn').forEach(b=>b.classList.remove('sel'));
+  const btn=document.getElementById('sb-'+s);
+  if(btn) btn.classList.add('sel');
+  const stock=getStock();
+  medicamentos=stock[s].map((m,i)=>({...m,conteo:0,vencimiento:'',id:i}));
+  document.getElementById('titulo-conteo').textContent=`💊 Conteo de Medicamentos — ${s}`;
+  respuestas1={}; respuestas2={};
+}
+
+/* ── VENCIMIENTO ── */
+function diasVto(f){
+  if(!f) return null;
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  return Math.round((new Date(f+'T00:00:00')-hoy)/86400000);
+}
+function vtoStatus(f){
+  const d=diasVto(f);
+  if(d===null) return 'sin';
+  if(d<0)      return 'vencido';
+  if(d<=60)    return 'proximo';
+  return 'vigente';
+}
+function vtoBadge(f){
+  const d=diasVto(f),st=vtoStatus(f);
+  if(st==='sin')     return '<span class="badge b-sin">Sin fecha</span>';
+  if(st==='vencido') return `<span class="badge b-venc">⛔ Vencido (${Math.abs(d)}d)</span>`;
+  if(st==='proximo') return `<span class="badge b-prox">⚠ ${d} días</span>`;
+  return '<span class="badge b-vigente">✓ Vigente</span>';
+}
+
+/* ── TABLA MEDICAMENTOS ── */
+function renderTabla(){
+  const filtro=(document.getElementById('filtro-med').value||'').toLowerCase();
+  const tbody=document.getElementById('meds-tbody');
+  const vis=medicamentos.filter(m=>{
+    if(!m.nombre.toLowerCase().includes(filtro)) return false;
+    if(filtroStock&&m.stock===0) return false;
+    if(filtroVto&&!['vencido','proximo'].includes(vtoStatus(m.vencimiento))) return false;
+    return true;
+  });
+  if(!vis.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--texto-suave)">Sin resultados.</td></tr>';
+  } else {
+    tbody.innerHTML=vis.map(m=>{
+      const diff=m.conteo-m.stock;
+      let sc='b-na',st='N/A';
+      if(m.stock>0){
+        if(diff===0)    {sc='b-ok';  st='✓ Completo';}
+        else if(diff<0) {sc='b-low'; st=`${diff} falt.`;}
+        else            {sc='b-warn';st=`+${diff} exc.`;}
+      }
+      const vs=vtoStatus(m.vencimiento);
+      const rowClass=vs==='vencido'?'vencido':vs==='proximo'?'proximo':'';
+      const dateClass=vs==='vencido'?'vencido':vs==='proximo'?'proximo':'';
+      return `<tr class="${rowClass}">
+        <td style="font-family:'IBM Plex Mono',monospace;color:var(--texto-suave);font-size:.7rem">${m.id+1}</td>
+        <td><strong style="font-size:.8rem">${m.nombre}</strong></td>
+        <td style="font-size:.75rem;color:var(--texto-suave)">${m.presentacion}</td>
+        <td class="center" style="font-family:'IBM Plex Mono',monospace;font-weight:600">${m.stock}</td>
+        <td class="center"><input type="number" min="0" value="${m.conteo}" onchange="updConteo(${m.id},this.value)" ${m.stock===0?'style="opacity:.4"':''} /></td>
+        <td class="center" style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:${diff<0?'var(--rojo)':diff>0?'var(--amarillo)':'var(--verde)'}">${m.stock>0?(diff>0?'+'+diff:diff):'—'}</td>
+        <td><input type="date" value="${m.vencimiento}" class="${dateClass}" onchange="updVto(${m.id},this.value)" /></td>
+        <td>${vtoBadge(m.vencimiento)}</td>
+        <td><span class="badge ${sc}">${st}</span></td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('cnt-meds').textContent=`${vis.length}/${medicamentos.length} ítems`;
+  actualizarMiniStats();
+}
+
+function updConteo(id,val){const m=medicamentos.find(x=>x.id===id);if(m){m.conteo=parseInt(val)||0;renderTabla();}}
+function updVto(id,val){const m=medicamentos.find(x=>x.id===id);if(m){m.vencimiento=val;renderTabla();}}
+function toggleFiltro(t){
+  if(t==='stock'){filtroStock=!filtroStock;document.getElementById('btn-solo-stock').classList.toggle('on',filtroStock);}
+  if(t==='vto'){filtroVto=!filtroVto;document.getElementById('btn-solo-vto').classList.toggle('on',filtroVto);}
+  renderTabla();
+}
+function marcarCompletos(){medicamentos.forEach(m=>{if(m.stock>0)m.conteo=m.stock;});renderTabla();}
+function limpiarConteos(){medicamentos.forEach(m=>{m.conteo=0;m.vencimiento='';});renderTabla();}
+
+function actualizarMiniStats(){
+  const cs=medicamentos.filter(m=>m.stock>0);
+  const comp=cs.filter(m=>m.conteo===m.stock).length;
+  const falt=cs.filter(m=>m.conteo<m.stock).length;
+  const exc=cs.filter(m=>m.conteo>m.stock).length;
+  const venc=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='vencido').length;
+  const prox=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='proximo').length;
+  document.getElementById('resumen-conteo').innerHTML=`<div class="mini-stats">
+    <div class="mini-s" style="background:var(--verde-claro)"><div class="mini-n" style="color:var(--verde)">${comp}</div><div class="mini-l" style="color:var(--verde)">Completos</div></div>
+    <div class="mini-s" style="background:var(--rojo-claro)"><div class="mini-n" style="color:var(--rojo)">${falt}</div><div class="mini-l" style="color:var(--rojo)">Faltantes</div></div>
+    <div class="mini-s" style="background:var(--amarillo-claro)"><div class="mini-n" style="color:var(--amarillo)">${exc}</div><div class="mini-l" style="color:var(--amarillo)">Con exceso</div></div>
+    <div class="mini-s" style="background:var(--rojo-claro)"><div class="mini-n" style="color:var(--rojo)">${venc}</div><div class="mini-l" style="color:var(--rojo)">⛔ Vencidos</div></div>
+    <div class="mini-s" style="background:var(--naranja-claro)"><div class="mini-n" style="color:var(--naranja)">${prox}</div><div class="mini-l" style="color:var(--naranja)">⚠ Próx. VTO</div></div>
+    <div class="mini-s" style="background:var(--gris)"><div class="mini-n" style="color:var(--texto)">${cs.length}</div><div class="mini-l" style="color:var(--texto-suave)">Con stock</div></div>
+  </div>`;
+}
+
+/* ── PAUTAS ── */
+function renderPauta(crits,cid,resp,vId,bId,dId){
+  document.getElementById(cid).innerHTML=crits.map((cr,i)=>{
+    const txt=typeof cr==='object'?cr.t:cr;
+    const bold=typeof cr==='object'&&cr.bold;
+    const v=resp[i]||null;
+    return `<div class="criterio-row">
+      <div class="crit-num">${i+1}</div>
+      <div class="crit-txt ${bold?'bold':''}">${txt}</div>
+      <div class="radio-grp">
+        <button class="r-btn ${v==='SI'?'r-si':''}" onclick="setResp('${cid}',${i},'SI')">SI</button>
+        <button class="r-btn ${v==='NO'?'r-no':''}" onclick="setResp('${cid}',${i},'NO')">NO</button>
+        <button class="r-btn ${v==='NA'?'r-na':''}" onclick="setResp('${cid}',${i},'NA')">N/A</button>
+      </div>
+    </div>`;
+  }).join('');
+  calcPct(crits,resp,vId,bId,dId);
+}
+
+function setResp(cid,idx,val){
+  const isP1=cid==='criterios-p1';
+  const resp=isP1?respuestas1:respuestas2;
+  resp[idx]=val;
+  renderPauta(isP1?getCrits1():getCrits2(),cid,resp,isP1?'pct1-val':'pct2-val',isP1?'pct1-bar':'pct2-bar',isP1?'pct1-det':'pct2-det');
+}
+
+function calcPct(crits,resp,vId,bId,dId){
+  const vals=Object.values(resp);
+  const si=vals.filter(v=>v==='SI').length,no=vals.filter(v=>v==='NO').length,na=vals.filter(v=>v==='NA').length;
+  const apl=crits.length-na, pct=apl>0?Math.round(si/apl*100):0;
+  const col=pct>=80?'var(--verde)':pct>=60?'var(--amarillo)':'var(--rojo)';
+  document.getElementById(vId).textContent=apl>0?pct+'%':'—';
+  document.getElementById(bId).style.cssText=`width:${pct}%;background:${col}`;
+  document.getElementById(dId).innerHTML=`SI: <b>${si}</b> &nbsp; NO: <b>${no}</b> &nbsp; N/A: <b>${na}</b>`;
+}
+
+function getPct(crits,resp){
+  const na=Object.values(resp).filter(v=>v==='NA').length;
+  const si=Object.values(resp).filter(v=>v==='SI').length;
+  const apl=crits.length-na;
+  return apl>0?Math.round(si/apl*100):0;
+}
+
+/* ── RESUMEN ── */
+function renderResumen(){
+  const fecha=document.getElementById('fechaEval').value;
+  const serv=servicioActual||'—';
+  const eval_=document.getElementById('evaluadorNombre').value||'—';
+  const carro=document.getElementById('carroParo').value||'—';
+  const ref=document.getElementById('stockRef').value||'—';
+  const obs=document.getElementById('observaciones').value||'';
+  const C1=getCrits1(),C2=getCrits2();
+  const p1=getPct(C1,respuestas1),p2=getPct(C2,respuestas2),pt=Math.round((p1+p2)/2);
+  const cc=m=>m>=80?'var(--verde)':m>=60?'var(--amarillo)':'var(--rojo)';
+  const conStock=medicamentos.filter(m=>m.stock>0);
+  const faltantes=conStock.filter(m=>m.conteo<m.stock);
+  const vencidos=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='vencido');
+  const proximos=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='proximo');
+  let alertasVto='';
+  if(vencidos.length) alertasVto+=`<div class="alert alert-danger"><span>⛔</span><span><strong>${vencidos.length} medicamento(s) VENCIDO(S):</strong> ${vencidos.map(m=>m.nombre.split(' ').slice(0,3).join(' ')).join(' · ')}</span></div>`;
+  if(proximos.length) alertasVto+=`<div class="alert alert-warn"><span>⚠️</span><span><strong>${proximos.length} próximo(s) a vencer (≤60 días):</strong> ${proximos.map(m=>`${m.nombre.split(' ').slice(0,3).join(' ')} (${diasVto(m.vencimiento)}d)`).join(' · ')}</span></div>`;
+
+  document.getElementById('resumen-wrap').innerHTML=`<div class="card">
+    <div class="card-header">
+      <h2>📊 Resumen — ${serv}</h2>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn btn-sm btn-primary" onclick="guardarEval()">💾 Guardar</button>
+        <button class="btn btn-sm btn-success" onclick="generarPDF()">📄 PDF</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem 1.25rem;margin-bottom:1rem;font-size:.85rem">
+        <div><label>Fecha</label><br>${fecha||'—'}</div>
+        <div><label>Servicio</label><br><strong>${serv}</strong></div>
+        <div><label>Evaluador Q.F.</label><br>${eval_}</div>
+        <div><label>Carro de Paro</label><br>${carro}</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-n" style="color:${cc(p1)}">${p1}%</div><div class="stat-l">Pauta Carro de Paro</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:${cc(p2)}">${p2}%</div><div class="stat-l">Pauta Unidosis</div></div>
+        <div class="stat-box"><div class="stat-n" style="color:${cc(pt)}">${pt}%</div><div class="stat-l">Cumplimiento Total</div></div>
+      </div>
+      ${alertasVto}
+      ${faltantes.length?`<div class="alert alert-warn"><span>⚠️</span><span><strong>${faltantes.length} fármaco(s) con faltante de stock.</strong></span></div>`:''}
+      ${!alertasVto&&!faltantes.length?'<div class="alert alert-ok"><span>✅</span><span>Sin alertas de stock ni vencimientos.</span></div>':''}
+      ${conStock.length?`<div style="overflow-x:auto;margin-top:.85rem"><table class="med-table">
+        <thead><tr><th>#</th><th>Medicamento</th><th>Presentación</th><th class="center">Auth.</th><th class="center">Encontrado</th><th class="center">Dif.</th><th>Vencimiento</th><th>VTO</th><th>Stock</th></tr></thead>
+        <tbody>${conStock.map((m,i)=>{
+          const diff=m.conteo-m.stock;
+          let sc='b-na',st='';
+          if(diff===0){sc='b-ok';st='✓';}else if(diff<0){sc='b-low';st=String(diff);}else{sc='b-warn';st='+'+diff;}
+          const vs=vtoStatus(m.vencimiento);
+          const rs=vs==='vencido'?'background:#fff5f5':vs==='proximo'?'background:#fff9f0':'';
+          return `<tr style="${rs}"><td style="font-size:.7rem;color:var(--texto-suave)">${i+1}</td><td><strong style="font-size:.79rem">${m.nombre}</strong></td><td style="font-size:.74rem;color:var(--texto-suave)">${m.presentacion}</td><td class="center">${m.stock}</td><td class="center">${m.conteo}</td><td class="center" style="font-weight:700">${diff===0?'=':(diff>0?'+'+diff:diff)}</td><td style="font-size:.75rem">${m.vencimiento||'—'}</td><td>${vtoBadge(m.vencimiento)}</td><td><span class="badge ${sc}">${diff===0?'Completo':diff<0?'Faltante':'Exceso'}</span></td></tr>`;
+        }).join('')}</tbody>
+      </table></div>`:''}
+      ${obs?`<div style="margin-top:.85rem"><label>Observaciones</label><div style="font-size:.84rem;line-height:1.55;padding:.75rem;background:var(--gris);border-radius:7px;margin-top:.3rem">${obs}</div></div>`:''}
+      <div class="flex-bw mt15">
+        <button class="btn btn-outline" onclick="goStep(4)">← Volver</button>
+        <div style="display:flex;gap:.6rem">
+          <button class="btn btn-primary" onclick="guardarEval()">💾 Guardar en Historial</button>
+          <button class="btn btn-success" onclick="generarPDF()">📄 Descargar PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── HISTORIAL ── */
+function guardarEval(){
+  const C1=getCrits1(),C2=getCrits2();
+  const p1=getPct(C1,respuestas1),p2=getPct(C2,respuestas2);
+  const ev={
+    id:Date.now(),
+    fecha:document.getElementById('fechaEval').value,
+    servicio:servicioActual||'—',
+    evaluador:document.getElementById('evaluadorNombre').value||'—',
+    carro:document.getElementById('carroParo').value||'—',
+    ref:document.getElementById('stockRef').value||'—',
+    meds:JSON.parse(JSON.stringify(medicamentos)),
+    r1:{...respuestas1},r2:{...respuestas2},
+    obs:document.getElementById('observaciones').value,
+    p1,p2,pt:Math.round((p1+p2)/2)
+  };
+  const h=getHistorial();h.unshift(ev);setData('sf_hist',h);
+  const btn=event.currentTarget,orig=btn.textContent;
+  btn.textContent='✅ Guardado';btn.disabled=true;
+  setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},2200);
+}
+
+function renderHistorial(){
+  const h=getHistorial();
+  const wrap=document.getElementById('hist-wrap');
+  if(!h.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--texto-suave)">No hay evaluaciones guardadas.</div>';return;}
+  const cc=p=>p>=80?'var(--verde)':p>=60?'var(--amarillo)':'var(--rojo)';
+  wrap.innerHTML=h.map(e=>{
+    const venc=(e.meds||[]).filter(m=>vtoStatus(m.vencimiento)==='vencido').length;
+    const prox=(e.meds||[]).filter(m=>vtoStatus(m.vencimiento)==='proximo').length;
+    const av=venc?`<span class="badge b-venc">⛔ ${venc} venc.</span>`:prox?`<span class="badge b-prox">⚠ ${prox} próx.</span>`:'';
+    return `<div class="hist-item" onclick="verEval(${e.id})">
+      <div class="hist-fecha">${e.fecha||'—'}</div>
+      <div style="flex:1"><div class="hist-srv">${e.servicio}</div><div style="font-size:.73rem;color:var(--texto-suave)">${e.carro} · ${e.evaluador}</div></div>
+      ${av}
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:700;padding:.22rem .65rem;border-radius:6px;background:${cc(e.pt)}18;color:${cc(e.pt)}">${e.pt}%</div>
+      <button class="btn btn-sm btn-success" onclick="event.stopPropagation();pdfHist(${e.id})">📄 PDF</button>
+      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delEval(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function delEval(id){if(!confirm('¿Eliminar?'))return;setData('sf_hist',getHistorial().filter(e=>e.id!==id));renderHistorial();}
+function limpiarHistorial(){if(!confirm('¿Limpiar todo el historial?'))return;setData('sf_hist',[]);renderHistorial();}
+function exportarHistorial(){
+  const b=new Blob([JSON.stringify(getHistorial(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='historial_supervisafarma.json';a.click();
+}
+
+function cargarEval(e){
+  document.getElementById('fechaEval').value=e.fecha;
+  document.getElementById('evaluadorNombre').value=e.evaluador;
+  document.getElementById('carroParo').value=e.carro;
+  document.getElementById('stockRef').value=e.ref||'';
+  document.getElementById('observaciones').value=e.obs;
+  servicioActual=e.servicio; medicamentos=e.meds||[];
+  Object.assign(respuestas1,e.r1); Object.assign(respuestas2,e.r2);
+}
+
+function verEval(id){
+  const e=getHistorial().find(x=>x.id===id);if(!e)return;
+  cargarEval(e);
+  showPage('nueva');
+  document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  document.querySelectorAll('.nav-tab')[1].classList.remove('active');
+  goStep(5);
+}
+
+function pdfHist(id){const e=getHistorial().find(x=>x.id===id);if(!e)return;cargarEval(e);generarPDF();}
+
+/* ── ADMIN ── */
+function initAdmin(){
+  const stock=getStock(),srvs=Object.keys(stock);
+  document.getElementById('admin-servicios-list').innerHTML=srvs.map(s=>`
+    <div class="admin-item">
+      <div class="admin-item-name">${s}</div>
+      <div class="admin-item-detail">${stock[s].filter(m=>m.stock>0).length} con stock / ${stock[s].length} total</div>
+      <button class="btn btn-xs btn-danger" onclick="delServicio('${s}')">Eliminar</button>
+    </div>`).join('');
+  const sel=document.getElementById('admin-srv-sel');
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar —</option>'+srvs.map(s=>`<option value="${s}" ${s===prev?'selected':''}>${s}</option>`).join('');
+  if(prev&&stock[prev]) loadAdminStock();
+}
+
+function loadAdminStock(){
+  const srv=document.getElementById('admin-srv-sel').value;
+  const stock=getStock();
+  const wrap=document.getElementById('admin-stock-wrap');
+  document.getElementById('add-med-row').style.display=srv?'flex':'none';
+  if(!srv||!stock[srv]){wrap.innerHTML='<div class="alert alert-info"><span>ℹ️</span><span>Selecciona un servicio.</span></div>';return;}
+  wrap.innerHTML=`<div style="overflow-x:auto"><table class="med-table">
+    <thead><tr><th>#</th><th>Medicamento</th><th>Presentación</th><th class="center">Stock Auth.</th><th></th></tr></thead>
+    <tbody>${stock[srv].map((m,i)=>`
+      <tr>
+        <td style="font-size:.7rem;color:var(--texto-suave)">${i+1}</td>
+        <td style="font-size:.8rem"><strong>${m.nombre}</strong></td>
+        <td style="font-size:.75rem">${m.presentacion}</td>
+        <td class="center"><input type="number" min="0" value="${m.stock}" onchange="updStockAdmin('${srv}',${i},this.value)" style="width:68px;text-align:center"/></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-xs btn-outline" onclick="openEditMed('${srv}',${i})">✏ Editar</button>
+          <button class="btn-ghost" onclick="delMed('${srv}',${i})">✕</button>
+        </td>
+      </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function updStockAdmin(srv,idx,val){const s=getStock();s[srv][idx].stock=parseInt(val)||0;setData('sf_stock',s);}
+
+function addServicio(){
+  const n=document.getElementById('new-srv-nombre').value.trim();if(!n)return;
+  const s=getStock();if(s[n]){alert('Ya existe.');return;}
+  s[n]=Object.values(s)[0].map(m=>(({nombre:m.nombre,presentacion:m.presentacion,stock:0})));
+  setData('sf_stock',s);document.getElementById('new-srv-nombre').value='';initAdmin();initServicios();
+}
+
+function delServicio(s){
+  if(!confirm(`¿Eliminar "${s}"?`))return;
+  const stock=getStock();delete stock[s];setData('sf_stock',stock);initAdmin();initServicios();
+}
+
+function addMedicamento(){
+  const srv=document.getElementById('admin-srv-sel').value;
+  const nombre=document.getElementById('new-med-nombre').value.trim();
+  const pres=document.getElementById('new-med-pres').value.trim()||'—';
+  const stk=parseInt(document.getElementById('new-med-stock').value)||0;
+  if(!srv||!nombre)return;
+  const stock=getStock();
+  Object.keys(stock).forEach(s=>{
+    if(!stock[s].find(m=>m.nombre===nombre)) stock[s].push({nombre,presentacion:pres,stock:s===srv?stk:0});
+    else if(s===srv){const m=stock[s].find(m=>m.nombre===nombre);m.stock=stk;m.presentacion=pres;}
+  });
+  setData('sf_stock',stock);
+  document.getElementById('new-med-nombre').value='';
+  document.getElementById('new-med-pres').value='';
+  document.getElementById('new-med-stock').value='0';
+  loadAdminStock();initServicios();
+}
+
+function delMed(srv,idx){
+  if(!confirm('¿Eliminar este medicamento de TODOS los servicios?'))return;
+  const stock=getStock();const nombre=stock[srv][idx].nombre;
+  Object.keys(stock).forEach(s=>{stock[s]=stock[s].filter(m=>m.nombre!==nombre);});
+  setData('sf_stock',stock);loadAdminStock();initAdmin();
+}
+
+function openEditMed(srv,idx){
+  const m=getStock()[srv][idx];
+  document.getElementById('edit-med-srv').value=srv;
+  document.getElementById('edit-med-idx').value=idx;
+  document.getElementById('edit-med-nombre').value=m.nombre;
+  document.getElementById('edit-med-pres').value=m.presentacion;
+  document.getElementById('edit-med-stock').value=m.stock;
+  document.getElementById('modal-edit-med').classList.remove('hidden');
+}
+
+function saveEditMed(){
+  const srv=document.getElementById('edit-med-srv').value;
+  const idx=parseInt(document.getElementById('edit-med-idx').value);
+  const stock=getStock();
+  const viejoN=stock[srv][idx].nombre;
+  const nuevoN=document.getElementById('edit-med-nombre').value.trim();
+  const nuevaP=document.getElementById('edit-med-pres').value.trim();
+  const nuevoS=parseInt(document.getElementById('edit-med-stock').value)||0;
+  if(nuevoN!==viejoN) Object.keys(stock).forEach(s=>{const m=stock[s].find(m=>m.nombre===viejoN);if(m)m.nombre=nuevoN;});
+  stock[srv][idx].presentacion=nuevaP;stock[srv][idx].stock=nuevoS;
+  setData('sf_stock',stock);closeModal();loadAdminStock();
+}
+
+function closeModal(){document.getElementById('modal-edit-med').classList.add('hidden');}
+
+function exportarConfig(){
+  const b=new Blob([JSON.stringify({stock:getStock(),c1:getCrits1(),c2:getCrits2(),v:'2.0',fecha:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='config_supervisafarma.json';a.click();
+}
+
+function importarConfig(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.stock)setData('sf_stock',d.stock);
+      if(d.c1)setData('sf_c1',d.c1);
+      if(d.c2)setData('sf_c2',d.c2);
+      alert('Configuración importada correctamente.');initAdmin();initServicios();
+    }catch{alert('Error: archivo JSON inválido.');}
+  };
+  r.readAsText(file);ev.target.value='';
+}
+
+function resetearDatos(){
+  if(!confirm('¿Restaurar datos originales? Se perderán los cambios de administración.'))return;
+  ['sf_stock','sf_c1','sf_c2'].forEach(k=>localStorage.removeItem(k));
+  alert('Datos restaurados.');initAdmin();initServicios();
+}
+
+/* ── PDF ── */
+function generarPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=16,CW=W-M*2;let y=0;
+  const fecha=document.getElementById('fechaEval').value;
+  const serv=servicioActual||'—';
+  const eval_=document.getElementById('evaluadorNombre').value||'—';
+  const carro=document.getElementById('carroParo').value||'—';
+  const ref=document.getElementById('stockRef').value||'—';
+  const obs=document.getElementById('observaciones').value||'';
+  const C1=getCrits1(),C2=getCrits2();
+  const p1=getPct(C1,respuestas1),p2=getPct(C2,respuestas2),pt=Math.round((p1+p2)/2);
+  const chkY=n=>{if(y+n>280){doc.addPage();y=M;}};
+  const cc=p=>p>=80?[26,122,74]:p>=60?[212,130,10]:[192,57,43];
+
+  doc.setFillColor(27,58,92);doc.rect(0,0,210,22,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('SUPERVISIÓN CARROS DE PARO — '+serv,M,10);
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+  doc.text('SupervisaFarma v2.0 · Stock autorizado consolidado 18-05-2025',M,16);
+  y=28;
+
+  doc.setTextColor(27,58,92);doc.setFontSize(9.5);doc.setFont('helvetica','bold');doc.text('DATOS DE LA EVALUACIÓN',M,y);y+=5;
+  doc.setDrawColor(200,210,220);doc.line(M,y,W-M,y);y+=4;
+  doc.setTextColor(50,50,50);doc.setFontSize(8.5);
+  [['Fecha:',fecha||'—','Servicio:',serv],['Evaluador Q.F.:',eval_,'Carro de Paro:',carro],['N° Resolución:',ref,'','']].forEach(r=>{
+    doc.setFont('helvetica','bold');doc.text(r[0],M,y);doc.setFont('helvetica','normal');doc.text(r[1],M+30,y);
+    if(r[2]){doc.setFont('helvetica','bold');doc.text(r[2],112,y);doc.setFont('helvetica','normal');doc.text(r[3],140,y);}
+    y+=6;
+  });y+=2;
+
+  chkY(26);doc.setFillColor(234,242,251);doc.roundedRect(M,y,CW,20,3,3,'F');
+  [[p1,'Pauta Carro de Paro',M+50],[p2,'Pauta Unidosis',M+92],[pt,'CUMPLIMIENTO TOTAL',M+137]].forEach(([p,lbl,x])=>{
+    const[r,g,b]=cc(p);doc.setTextColor(r,g,b);doc.setFontSize(14);doc.setFont('helvetica','bold');doc.text(p+'%',x,y+12);
+    doc.setTextColor(80,80,80);doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text(lbl,x,y+18);
+  });y+=26;
+
+  const vencidos=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='vencido');
+  const proximos=medicamentos.filter(m=>vtoStatus(m.vencimiento)==='proximo');
+  if(vencidos.length){chkY(12);doc.setFillColor(253,236,234);doc.roundedRect(M,y,CW,10,2,2,'F');doc.setTextColor(192,57,43);doc.setFontSize(8);doc.setFont('helvetica','bold');const t=doc.splitTextToSize('VENCIDOS ('+vencidos.length+'): '+vencidos.map(m=>m.nombre.split(' ').slice(0,3).join(' ')).join(', '),CW-4);doc.text(t[0],M+2,y+6.5);y+=13;}
+  if(proximos.length){chkY(12);doc.setFillColor(254,246,228);doc.roundedRect(M,y,CW,10,2,2,'F');doc.setTextColor(212,130,10);doc.setFontSize(8);doc.setFont('helvetica','bold');const t=doc.splitTextToSize('PRÓXIMOS A VENCER ('+proximos.length+'): '+proximos.map(m=>m.nombre.split(' ').slice(0,3).join(' ')+' ('+diasVto(m.vencimiento)+'d)').join(', '),CW-4);doc.text(t[0],M+2,y+6.5);y+=13;}
+
+  const conStock=medicamentos.filter(m=>m.stock>0);
+  if(conStock.length){
+    chkY(18);doc.setTextColor(27,58,92);doc.setFontSize(9.5);doc.setFont('helvetica','bold');
+    doc.text('CONTEO DE MEDICAMENTOS ('+conStock.length+' ítems con stock autorizado)',M,y);y+=5;
+    doc.setDrawColor(200,210,220);doc.line(M,y,W-M,y);y+=3;
+    const cols=[7,58,20,14,16,13,22,22];
+    const hdrs=['#','Principio Activo','Presentación','Auth.','Encontrado','Dif.','Vencimiento','VTO'];
+    doc.setFillColor(27,58,92);doc.rect(M,y,CW,6.5,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+    let cx=M;hdrs.forEach((h,i)=>{doc.text(h,cx+1.5,y+4.5);cx+=cols[i];});y+=6.5;
+    conStock.forEach((m,idx)=>{
+      chkY(7);const diff=m.conteo-m.stock,vs=vtoStatus(m.vencimiento);
+      if(vs==='vencido'){doc.setFillColor(253,236,234);doc.rect(M,y,CW,6.5,'F');}
+      else if(vs==='proximo'){doc.setFillColor(254,246,228);doc.rect(M,y,CW,6.5,'F');}
+      else if(idx%2===0){doc.setFillColor(245,248,252);doc.rect(M,y,CW,6.5,'F');}
+      cx=M;doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+      const vtoText=vs==='vencido'?'VENCIDO':vs==='proximo'?(diasVto(m.vencimiento)+'d'):'Vigente';
+      [String(idx+1),m.nombre,m.presentacion,String(m.stock),String(m.conteo),(diff>0?'+':'')+diff,m.vencimiento||'—',vtoText].forEach((v,i)=>{
+        if(i===7){const[r,g,b]=vs==='vencido'?[192,57,43]:vs==='proximo'?[212,130,10]:[26,122,74];doc.setTextColor(r,g,b);doc.setFont('helvetica','bold');}
+        else if(i===5&&diff!==0){doc.setTextColor(diff<0?192:212,diff<0?57:130,diff<0?43:10);}
+        else{doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');}
+        const txt=doc.splitTextToSize(v,cols[i]-2);doc.text(txt[0]||'',cx+1.5,y+4.5);cx+=cols[i];
+      });y+=6.5;
+    });y+=4;
+  }
+
+  function pdfPauta(titulo,crits,resp){
+    chkY(20);doc.setTextColor(27,58,92);doc.setFontSize(9.5);doc.setFont('helvetica','bold');doc.text(titulo,M,y);y+=5;
+    doc.setDrawColor(200,210,220);doc.line(M,y,W-M,y);y+=3;
+    const si=Object.values(resp).filter(v=>v==='SI').length,no=Object.values(resp).filter(v=>v==='NO').length,na=Object.values(resp).filter(v=>v==='NA').length;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(80,80,80);
+    doc.text('SI: '+si+' | NO: '+no+' | N/A: '+na+' | Cumplimiento: '+getPct(crits,resp)+'%',M,y);y+=5;
+    crits.forEach((c,i)=>{
+      const txt=typeof c==='object'?c.t:c,rv=resp[i]||'—';
+      const lines=doc.splitTextToSize((i+1)+'. '+txt,CW-18),h=lines.length*4.2+3;
+      chkY(h);
+      if(i%2===0){doc.setFillColor(248,250,252);doc.rect(M,y,CW,h,'F');}
+      doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(lines,M+2,y+3.5);
+      const[r,g,b]=rv==='SI'?[26,122,74]:rv==='NO'?[192,57,43]:[212,130,10];
+      doc.setTextColor(r,g,b);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(rv,W-M-8,y+3.5);
+      y+=h;
+    });y+=4;
+  }
+  pdfPauta('PAUTA 1 — CARRO DE PARO / STOCK AUTORIZADO',C1,respuestas1);
+  pdfPauta('PAUTA 2 — ALMACENAMIENTO FÁRMACOS PACIENTES (UNIDOSIS)',C2,respuestas2);
+
+  if(obs){chkY(20);doc.setTextColor(27,58,92);doc.setFontSize(9.5);doc.setFont('helvetica','bold');doc.text('OBSERVACIONES',M,y);y+=5;doc.setDrawColor(200,210,220);doc.line(M,y,W-M,y);y+=4;doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(50,50,50);const ln=doc.splitTextToSize(obs,CW);chkY(ln.length*5+4);doc.text(ln,M,y);y+=ln.length*5+4;}
+
+  chkY(35);y=Math.max(y+5,242);
+  doc.setDrawColor(180,190,200);doc.line(M,y+15,M+62,y+15);doc.line(W-M-62,y+15,W-M,y+15);
+  doc.setFontSize(7.5);doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');
+  doc.text('Firma y timbre Profesional Responsable',M,y+20);
+  doc.text('Firma y timbre Químico Farmacéutico Evaluador',W-M-62,y+20);
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){doc.setPage(i);doc.setFontSize(6.5);doc.setTextColor(150,150,150);doc.text('SupervisaFarma v2.0 · '+serv+' · Pág '+i+'/'+total+' · '+new Date().toLocaleDateString('es-CL'),M,292);}
+  doc.save('SupervisaFarma_'+serv.replace(/\s/g,'_')+'_'+(fecha||'sin-fecha')+'.pdf');
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('fechaEval').value=new Date().toISOString().split('T')[0];
+  initServicios();
+  renderPauta(getCrits1(),'criterios-p1',respuestas1,'pct1-val','pct1-bar','pct1-det');
+  renderPauta(getCrits2(),'criterios-p2',respuestas2,'pct2-val','pct2-bar','pct2-det');
+});
+</script>
+</body>
+</html>
